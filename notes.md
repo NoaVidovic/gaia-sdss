@@ -6,7 +6,8 @@
 
 #### Gaia sources, SDSS cross-match and photometrics
 ```
-SELECT gs.source_id, sdss.clean_sdssdr13_oid, sdss.original_ext_source_id, sdss.angular_distance, gs.ra, gs.dec, gs.phot_g_mean_mag, gs.bp_g, gs.g_rp
+SELECT gs.source_id, sdss.clean_sdssdr13_oid, sdss.original_ext_source_id,
+       sdss.angular_distance, gs.ra, gs.dec, gs.phot_g_mean_mag, gs.bp_g, gs.g_rp
 FROM gaiadr3.xp_summary xp
 JOIN gaiadr3.sdssdr13_best_neighbour sdss ON sdss.source_id = xp.source_id
 JOIN gaiadr3.gaia_source gs ON gs.source_id = xp.source_id
