@@ -3,4 +3,7 @@ venv/*
 
 # Jupyter Notebook temporary files
 .ipynb_checkpoints/*
-output*.csv
+src/output*.csv
+
+# Dataset
+data/*
