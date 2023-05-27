@@ -1,9 +1,15 @@
 # Virtual environment
 venv/*
 
+# Python bytecode
+*.pyc
+
 # Jupyter Notebook temporary files
 .ipynb_checkpoints/*
 src/output*.csv
 
 # Dataset
 data/*
+
+# Login
+login
