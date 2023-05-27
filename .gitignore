@@ -1,2 +1,6 @@
+# Virtual environment
+venv/*
+
+# Jupyter Notebook temporary files
 .ipynb_checkpoints/*
 output*.csv
