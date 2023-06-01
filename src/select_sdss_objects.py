@@ -25,6 +25,6 @@ if not os.path.exists(data_path):
 print("Querying SDSS database...")
 
 csv_path = os.path.join(data_path, 'sdss_objects.csv')
-CasJobs.executeQuery(query, context="DR18").to_csv(csv_path, index=False) 
+CasJobs.executeQuery(query, context="DR18").astype({'specObjId': 'int64'}).to_csv(csv_path, index=False) 
 
 print("Done.")

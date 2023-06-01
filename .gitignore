@@ -8,5 +8,6 @@ venv/*
 **/.ipynb_checkpoints/*
 src/output*.csv
 
-# Dataset
+# Dataset and figures
 data/*
+figures/*
