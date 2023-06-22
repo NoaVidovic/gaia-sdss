@@ -4,9 +4,10 @@ venv/*
 # Python bytecode
 *.pyc
 
-# Jupyter Notebook temporary files
+# temporary files
 **/.ipynb_checkpoints/*
-src/output*.csv
+**/temp*/*
+**/output*.csv
 
 # Dataset and figures
 data/*
