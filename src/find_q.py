@@ -77,8 +77,13 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.474):
     sdss_flux_fit = (weights * norm(sdss_sampling[:, None], locs, widths)).sum(1)
     sdss_conv = (weights * norm(sdss_sampling[:, None], locs, sigma_conv)).sum(1)
 
-    # Gaia XP spectrum
-    gaia_flux = gxp.calibrate([gaia_id], sampling=sdss_sampling, truncation=True)[0]['flux'][0]
+    # Gaia servers are often down, so try until it works (can be a few hours...)
+    while True:
+        try:
+            gaia_flux = gxp.calibrate([gaia_id], sampling=sdss_sampling, truncation=True)[0]['flux'][0]
+            break
+        except:
+            pass
 
     # integrate flux
     sdss_flux_integrated = np.trapz(sdss_flux, sdss_sampling)
