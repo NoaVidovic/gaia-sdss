@@ -13,7 +13,7 @@ JOIN gaiadr3.sdssdr13_best_neighbour sdss ON sdss.source_id = xp.source_id
 JOIN gaiadr3.gaia_source gs ON gs.source_id = xp.source_id
 WHERE xp.bp_n_contaminated_transits = 0 AND xp.rp_n_contaminated_transits = 0
 AND gs.phot_g_mean_mag < 20.5
-AND gs.ra > 60 AND gs.ra < 300 AND dec > -1.67 AND dec < 1.67
+AND (gs.ra < 60 OR gs.ra > 300) AND dec > -1.67 AND dec < 1.67
 """
 
 data_path = os.path.join(get_script_path(), '..', 'data')

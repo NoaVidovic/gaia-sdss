@@ -42,13 +42,14 @@ def deltaXP(wvl):
                         [y1, y_mid, y2])
 
 
-def get_q(*, gaia_id=None, sdss_id=None, k=0.474):
+def get_q(*, gaia_id=None, sdss_id=None, k=0.489):
     """
     Gets q for a given SDSS ID.
+
     """
     if gaia_id is None and sdss_id is None:
         print('No ID supplied')
-    elif sdss_id is None:    
+    elif sdss_id is None:
         try:
             sdss_id = DF.loc[DF[GAIA_ID_COLNAME] == gaia_id][SDSS_ID_COLNAME].to_list()[0]
         except:
@@ -113,4 +114,3 @@ if __name__ == '__main__':
     print('Data processed. Saving to main_table.csv...')
     df_copy.to_csv(os.path.join(DATA_PATH, 'main_table.csv'), index=False)
     print('Done.')
-
