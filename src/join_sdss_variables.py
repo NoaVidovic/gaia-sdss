@@ -1,56 +1,44 @@
 import os
-import math
 import pandas as pd
+import numpy as np
+import sys
+from sklearn.neighbors import BallTree
 
-from util import get_script_path
+def get_script_path():
+    return os.path.dirname(os.path.realpath(sys.argv[0]))
+
 
 data_path = os.path.join(get_script_path(), '..', 'data')
 
 gaia_sdss_joined = pd.read_csv(os.path.join(data_path, 'gaia_sdss_joined.csv'))
 variables = pd.read_csv(os.path.join(data_path, 'variables.csv'))
 
+# Convert degrees to radians for calculations
+gaia_sdss_joined[['photoRa', 'photoDec']] = np.radians(gaia_sdss_joined[['photoRa', 'photoDec']])
+variables[['ra', 'dec']] = np.radians(variables[['ra', 'dec']])
+
+
 def find_nearby_stars(df1, df2):
-    i=1
-    row_count = df1.shape[0]
-    # Loop through stars in file1 and file2 to calculate distances
-    for _, star1 in df1.iterrows():
-        for _, star2 in df2.iterrows():
+    # Create a BallTree for efficient nearest neighbor search
+    tree = BallTree(df2[['ra', 'dec']], metric='haversine')
 
-            distance = haversine_distance(star1['photoRa'], star1['photoDec'], star2['ra'], star2['dec'])
+    # Query the tree for neighbors within given radius
+    dist = tree.query_radius(df1[['photoRa', 'photoDec']], r=0.1/3600)
 
-            if distance < 1:
+    df1['variablesID'] = pd.NA
+    variable_multiples = pd.DataFrame(columns=['source_id', 'variablesID'])
 
-                df1.loc[df1.index == star1.name, 'variablesID'] = int(star2['ID'])
-                df1['variablesID'] = pd.to_numeric(df1['variablesID'], errors='coerce').astype(pd.Int64Dtype())
-                df1.to_csv(os.path.join(data_path, 'gaia_sdss_joined_with_variablesID.csv'), index=False)
-                print('found one')
-                continue
+    for i, matches in enumerate(dist):
+        if len(matches) == 1:  # One match
+            df1.loc[i, 'variablesID'] = df2.loc[matches[0], 'ID']
+        elif len(matches) > 1:  # Multiple matches
+            new_rows = [{'source_id': df1.loc[i, 'source_id'], 'variablesID': df2.loc[match, 'ID']} for match in matches]
+            variable_multiples = pd.concat([variable_multiples, pd.DataFrame(new_rows)], ignore_index=True)
 
-        percentage = (i/row_count) * 100
-        print(str(round(percentage, 2)) + '% Done')
-        i += 1
-    return
+    df1.to_csv(os.path.join(data_path, 'gaia_sdss_joined_with_variablesID.csv'), index=False)
+    variable_multiples.to_csv(os.path.join(data_path, 'variable_multiples.csv'), index=False)
 
-
-def haversine_distance(ra1, dec1, ra2, dec2):
-    # Convert degrees to radians
-    lat_rad1 = dec1 * (math.pi/180)
-    lon_rad1 = ra1 * (math.pi/180)
-
-    lat_rad2 = dec2 * (math.pi/180)
-    lon_rad2 = ra2 * (math.pi/180)
-
-    # Calculate the Haversine distance in radians
-    d_rad = 2 * math.asin(math.sqrt(math.sin((lat_rad2 - lat_rad1)/2)**2 +
-                                    math.cos(lat_rad1) * math.cos(lat_rad2) * math.sin((lon_rad2 - lon_rad1)/2)**2))
-
-    # Convert radians to degrees
-    d_deg = d_rad * (180 / math.pi)
-
-    # Convert degrees to arcseconds
-    d_arcsec = d_deg * 3600
-
-    return d_arcsec
+    return df1, variable_multiples
 
 
 find_nearby_stars(gaia_sdss_joined, variables)
