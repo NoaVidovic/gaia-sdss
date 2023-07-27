@@ -42,7 +42,7 @@ def deltaXP(wvl):
                         [y1, y_mid, y2])
 
 
-def get_q(*, gaia_id=None, sdss_id=None, k=0.489):
+def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     """
     Gets q for a given SDSS ID.
 
