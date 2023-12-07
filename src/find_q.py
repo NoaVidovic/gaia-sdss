@@ -9,7 +9,7 @@ from astroML.sum_of_norms import sum_of_norms, norm
 from astroquery.sdss import SDSS as aq_sdss
 from tqdm import tqdm
 
-from util import get_script_path
+from util import get_script_path, decode_npy
 
 
 # constants
@@ -20,8 +20,9 @@ DF = pd.read_csv(os.path.join(DATA_PATH, 'main_table.csv'))
 df_copy = DF.copy()
 df_copy['sdss_flux'] = 0
 df_copy['gaia_flux'] = 0
-df_copy['mean_q'] = 0
-df_copy['median_q'] = 0
+df_copy['q_mean'] = 0
+df_copy['q_median'] = 0
+df_copy['q_std'] = 0
 
 GAIA_ID_COLNAME = 'source_id'
 SDSS_ID_COLNAME = 'specObjId'
@@ -60,12 +61,32 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         except:
             print('Could not find an Gaia ID corresponding to the provided SDSS ID')
 
+    # if the spectrum has already been fetched and calculated, just reuse it
+    q_path = os.path.join(SPECTRA_PATH, f'spectra_G{gaia_id}_S{sdss_id}.npy')
+
+    if os.path.exists(q_path):
+        data = decode_npy(q_path)
+
+        sdss_sampling = data['sampling']
+        sdss_flux = data['sdss_flux']
+        sdss_flux_fit = data['sdss_flux_fit']
+        sdss_conv = data['sdss_conv']
+        gaia_flux = data['gaia_flux']
+        q = data['q']
+        
+        sdss_flux_integrated = np.trapz(sdss_flux, sdss_sampling)
+        gaia_flux_integrated = np.trapz(gaia_flux, sdss_sampling)
+
+        return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.median(q), np.std(q))
+
+    # otherwise, go fetch them from online (can take ages)
+
     # SDSS spectrum
     try:
         sp = sdss.SpecObj(int(sdss_id))
         data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID)[0][1].data
     except:
-        return (-1, -1, -1, -1)
+        return (-1, -1, -1, -1, -1)
 
     sdss_sampling = 10 ** data['loglam'] / 10
     sdss_flux = data['flux'] * 1e-19
@@ -95,21 +116,22 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     if not os.path.exists(SPECTRA_PATH):
         os.makedirs(SPECTRA_PATH)
 
-    q_path = os.path.join(SPECTRA_PATH, f'spectra_G{gaia_id}_S{sdss_id}.npy')
+    # save all our spectrum data for reuse if the program crashes (my laptop sucks)
     np.save(q_path, np.array([sdss_sampling, sdss_flux, sdss_flux_fit, sdss_conv, gaia_flux, q]))
 
-    return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.median(q))
+    return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.median(q), np.std(q))
 
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     for gaia_id in tqdm(DF[:][GAIA_ID_COLNAME]):
-        sdss_flux, gaia_flux, mean_q, median_q = get_q(gaia_id=gaia_id)
+        sdss_flux, gaia_flux, q_mean, q_median, q_std = get_q(gaia_id=gaia_id)
 
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'sdss_flux'] = sdss_flux
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'gaia_flux'] = gaia_flux
-        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'mean_q'] = mean_q
-        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'median_q'] = median_q
+        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_mean'] = q_mean
+        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_median'] = q_median
+        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_std'] = q_std
 
     print('Data processed. Saving to main_table.csv...')
     df_copy.to_csv(os.path.join(DATA_PATH, 'main_table.csv'), index=False)

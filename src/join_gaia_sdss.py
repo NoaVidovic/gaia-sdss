@@ -10,6 +10,6 @@ print('Joining Gaia and SDSS data...')
 gaia = pd.read_csv(os.path.join(data_path, 'gaia_objects.csv'))
 sdss = pd.read_csv(os.path.join(data_path, 'sdss_objects.csv'))
 
-pd.merge(gaia, sdss, left_on='original_ext_source_id', right_on='objId').to_csv(os.path.join(data_path, 'gaia_sdss_joined.csv'), index=False)
+pd.merge(gaia, sdss, left_on='original_ext_source_id', right_on='objId').to_csv(os.path.join(data_path, 'main_table.csv'), index=False)
 
 print('Done.')
