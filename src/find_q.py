@@ -21,8 +21,9 @@ df_copy = DF.copy()
 df_copy['sdss_flux'] = 0
 df_copy['gaia_flux'] = 0
 df_copy['q_mean'] = 0
-df_copy['q_median'] = 0
 df_copy['q_std'] = 0
+df_copy['q_median'] = 0
+df_copy['q_rrms'] = 0
 
 GAIA_ID_COLNAME = 'source_id'
 SDSS_ID_COLNAME = 'specObjId'
@@ -77,16 +78,20 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         sdss_flux_integrated = np.trapz(sdss_flux, sdss_sampling)
         gaia_flux_integrated = np.trapz(gaia_flux, sdss_sampling)
 
-        return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.median(q), np.std(q))
+        q_25 = np.quantile(q, 0.25)
+        q_75 = np.quantile(q, 0.75)
+        q_rrms = 0.7413 * (q_75 - q_25)
+
+        return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.std(q), np.median(q), q_rrms)
 
     # otherwise, go fetch them from online (can take ages)
 
     # SDSS spectrum
     try:
-        sp = sdss.SpecObj(int(sdss_id))
+        sp = sdss.SpecObj(sdss_id)
         data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID)[0][1].data
-    except:
-        return (-1, -1, -1, -1, -1)
+    except Exception as e:
+        return (pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA)
 
     sdss_sampling = 10 ** data['loglam'] / 10
     sdss_flux = data['flux'] * 1e-19
@@ -112,6 +117,9 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     gaia_flux_integrated = np.trapz(gaia_flux, sdss_sampling)
 
     q = sdss_conv/gaia_flux
+    q_25 = np.quantile(q, 0.25)
+    q_75 = np.quantile(q, 0.75)
+    q_rrms = 0.7413 * (q_75 - q_25)
 
     if not os.path.exists(SPECTRA_PATH):
         os.makedirs(SPECTRA_PATH)
@@ -119,19 +127,20 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     # save all our spectrum data for reuse if the program crashes (my laptop sucks)
     np.save(q_path, np.array([sdss_sampling, sdss_flux, sdss_flux_fit, sdss_conv, gaia_flux, q]))
 
-    return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.median(q), np.std(q))
+    return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.std(q), np.median(q), q_rrms)
 
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     for gaia_id in tqdm(DF[:][GAIA_ID_COLNAME]):
-        sdss_flux, gaia_flux, q_mean, q_median, q_std = get_q(gaia_id=gaia_id)
+        sdss_flux, gaia_flux, q_mean, q_std, q_median, q_rrms = get_q(gaia_id=gaia_id)
 
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'sdss_flux'] = sdss_flux
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'gaia_flux'] = gaia_flux
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_mean'] = q_mean
-        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_median'] = q_median
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_std'] = q_std
+        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_median'] = q_median
+        df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'q_rrms'] = q_rrms
 
     print('Data processed. Saving to main_table.csv...')
     df_copy.to_csv(os.path.join(DATA_PATH, 'main_table.csv'), index=False)
