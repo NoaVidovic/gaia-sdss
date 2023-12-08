@@ -74,9 +74,12 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         sdss_conv = data['sdss_conv']
         gaia_flux = data['gaia_flux']
         q = data['q']
+
+        mask = (sdss_sampling > 390) & (sdss_sampling < 900)
         
-        sdss_flux_integrated = np.trapz(sdss_flux, sdss_sampling)
-        gaia_flux_integrated = np.trapz(gaia_flux, sdss_sampling)
+        sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
+        gaia_flux_integrated = np.trapz(gaia_flux[mask], sdss_sampling[mask])
+        q = q[mask]
 
         q_25 = np.quantile(q, 0.25)
         q_75 = np.quantile(q, 0.75)
@@ -112,11 +115,14 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         except:
             pass
 
-    # integrate flux
-    sdss_flux_integrated = np.trapz(sdss_flux, sdss_sampling)
-    gaia_flux_integrated = np.trapz(gaia_flux, sdss_sampling)
+    # mask is the part of the spectrum where SDSS data is good
+    mask = (sdss_sampling > 390) & (sdss_sampling < 900)
 
-    q = sdss_conv/gaia_flux
+    # integrate flux
+    sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
+    gaia_flux_integrated = np.trapz(gaia_flux[mask], sdss_sampling[mask])
+
+    q = sdss_conv[mask]/gaia_flux[mask]
     q_25 = np.quantile(q, 0.25)
     q_75 = np.quantile(q, 0.75)
     q_rrms = 0.7413 * (q_75 - q_25)
