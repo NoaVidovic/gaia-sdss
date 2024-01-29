@@ -1,6 +1,3 @@
-# sdss_gaia_plots
-
-
 ## Replication
 
 To run the code in this repository, create a virtual environment using `conda`:
