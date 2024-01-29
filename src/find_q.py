@@ -29,6 +29,8 @@ GAIA_ID_COLNAME = 'source_id'
 SDSS_ID_COLNAME = 'specObjId'
 NUM_NORMS = 800
 
+DEFAULT_RETURN = (pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA)
+
 
 def deltaXP(wvl):
     """
@@ -51,16 +53,19 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     """
     if gaia_id is None and sdss_id is None:
         print('No ID supplied')
+        return DEFAULT_RETURN
     elif sdss_id is None:
         try:
             sdss_id = DF.loc[DF[GAIA_ID_COLNAME] == gaia_id][SDSS_ID_COLNAME].to_list()[0]
         except:
             print('Could not find an SDSS ID corresponding to the provided Gaia ID')
+            return DEFAULT_RETURN
     elif gaia_id is None:
         try:
             gaia_id = DF.loc[DF[SDSS_ID_COLNAME] == sdss_id][GAIA_ID_COLNAME].to_list()[0]
         except:
             print('Could not find an Gaia ID corresponding to the provided SDSS ID')
+            return DEFAULT_RETURN
 
     # if the spectrum has already been fetched and calculated, just reuse it
     q_path = os.path.join(SPECTRA_PATH, f'spectra_G{gaia_id}_S{sdss_id}.npy')
@@ -94,7 +99,7 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         sp = sdss.SpecObj(sdss_id)
         data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID)[0][1].data
     except Exception as e:
-        return (pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA)
+        return DEFAULT_RETURN
 
     sdss_sampling = 10 ** data['loglam'] / 10
     sdss_flux = data['flux'] * 1e-19
