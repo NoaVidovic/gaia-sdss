@@ -91,19 +91,19 @@ GAIA_COLOR = '#4444FF'
 
 # main function
 
-def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False):
+def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_MEDIAN):
     if gaia_id is None and sdss_id is None:
         print('No ID provided')
         return
     elif sdss_id is None:    
         try:
-            sdss_id = DF.loc[DF['source_id'] == gaia_id]['specObjId'].to_list()[0]
+            sdss_id = mt.loc[mt['source_id'] == gaia_id]['specObjId'].to_list()[0]
         except:
             print('Could not find an SDSS ID corresponding to the provided Gaia ID')
             return
     elif gaia_id is None:
         try:
-            gaia_id = DF.loc[DF['specObjId'] == sdss_id]['source_id'].to_list()[0]
+            gaia_id = mt.loc[mt['specObjId'] == sdss_id]['source_id'].to_list()[0]
         except:
             print('Could not find an Gaia ID corresponding to the provided SDSS ID')
             return
@@ -147,7 +147,7 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False):
     closer_to_higher = (sampling - floors) > 0.5
     indices = floors - MIN_WVL + closer_to_higher
 
-    gaia_corr = gaia_flux * Q_MEDIAN[indices]
+    gaia_corr = gaia_flux * q_med[indices]
 
     w = sdss_conv / gaia_corr
     w_norm = w / np.median(w)
