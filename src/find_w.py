@@ -73,7 +73,7 @@ def get_w(*, gaia_id=None, sdss_id=None, k=0.5):
     mask = (sampling > MIN_WVL) & (sampling < MAX_WVL)
 
     sampling = sampling[mask]
-    q = data['q'][mask]
+    q = data['q']
         
     floors = np.floor(sampling).astype(np.int64)
     closer_to_higher = (sampling - floors) > 0.5

@@ -84,7 +84,6 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         
         sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
         gaia_flux_integrated = np.trapz(gaia_flux[mask], sdss_sampling[mask])
-        q = q[mask]
 
         q_25 = np.quantile(q, 0.25)
         q_75 = np.quantile(q, 0.75)
@@ -97,7 +96,7 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     # SDSS spectrum
     try:
         sp = sdss.SpecObj(sdss_id)
-        data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID)[0][1].data
+        data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID, data_release=17)[0][1].data
     except Exception as e:
         return DEFAULT_RETURN
 

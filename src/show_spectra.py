@@ -10,12 +10,11 @@ from astroquery.sdss import SDSS as aq_sdss
 from scipy.optimize import curve_fit
 from sys import argv
 
+from util import get_script_path, decode_npy
+
 
 
 # UTIL FUNCTIONS
-def get_script_path():
-    return os.path.dirname(os.path.realpath(argv[0]))
-
 def get_q():
     data_q = os.path.join(get_script_path(), '../data/q_median.npy')
     src_q  = os.path.join(get_script_path(), './q_median.npy')
@@ -67,8 +66,9 @@ def deltaXP(wvl):
 
 DF = get_main_table()
 Q_MEDIAN = get_q()
+DATA_PATH = os.path.join(get_script_path(), '../data/spectra')
 FIGURE_PATH = get_figure_path()
-MIN_WVL, MAX_WVL = 390, 900
+MIN_WVL, MAX_WVL = 400, 900
 NUM_NORMS = 800
 
 ## plot settings
@@ -91,7 +91,7 @@ GAIA_COLOR = '#4444FF'
 
 # main function
 
-def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_MEDIAN):
+def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=FIGURE_PATH, mt=DF, q_med=Q_MEDIAN, data_path=DATA_PATH):
     if gaia_id is None and sdss_id is None:
         print('No ID provided')
         return
@@ -107,35 +107,50 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_ME
         except:
             print('Could not find an Gaia ID corresponding to the provided SDSS ID')
             return
-            
-    # get sdss data
-    try:
-        sp = sdss.SpecObj(int(sdss_id))
-        data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID)
-    except:
-        print('Could not get SDSS data')
-        return
-    
-    spec_data = data[0][1].data
+        
+    gaia_g = mt.loc[mt['source_id'] == gaia_id]['phot_g_mean_mag'].to_list()[0]
+    sdss_r = mt.loc[mt['source_id'] == gaia_id]['psfMag_r'].to_list()[0]
 
-    sdss_sampling = 10 ** spec_data['loglam'] / 10  # Convert log wavelength to linear and Å to nm
-    sdss_flux = spec_data['flux'] * 1e-19 # Convert SDSS units (1e-17 in cgs) to Gaia units (SI)
-    
-    # get gaia data and calibrate using sdss sampling
-    gaia_flux = gxp.calibrate([gaia_id], sampling=sdss_sampling, truncation=True)[0]['flux'][0]
+    # reuse the spectrum if it's already been saved and calculated
+    q_path = os.path.join(data_path, f'spectra_G{gaia_id}_S{sdss_id}.npy')
 
-    weights, fit_rms, locs, widths = sum_of_norms(sdss_sampling, sdss_flux, NUM_NORMS,
-                                                 spacing='linear',
-                                                 full_output=True)
-    
-    # convolve sdss with sigma_gaia
-    k = 0.474  # obtained experimentally
-    sigma_conv = np.sqrt(widths**2 + k**2 * deltaXP(sdss_sampling[:, None])**2)  # convolve gaussian sigmas with sigma_gaia
-    sdss_flux_fit = (weights * norm(sdss_sampling[:, None], locs, widths)).sum(1)
-    sdss_conv = (weights * norm(sdss_sampling[:, None], locs, sigma_conv)).sum(1)
+    if os.path.exists(q_path):
+        data = decode_npy(q_path)
+
+        sdss_sampling = data['sampling']
+        sdss_flux = data['sdss_flux']
+        sdss_flux_fit = data['sdss_flux_fit']
+        sdss_conv = data['sdss_conv']
+        gaia_flux = data['gaia_flux']
+    else:
+        # get sdss data
+        try:
+            sp = sdss.SpecObj(int(sdss_id))
+            data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID, data_release=17)
+        except:
+            print('Could not get SDSS data')
+            return
+        
+        spec_data = data[0][1].data
+
+        sdss_sampling = 10 ** spec_data['loglam'] / 10  # Convert log wavelength to linear and Å to nm
+        sdss_flux = spec_data['flux'] * 1e-19 # Convert SDSS units (1e-17 in cgs) to Gaia units (SI)
+        
+        # get gaia data and calibrate using sdss sampling
+        gaia_flux = gxp.calibrate([gaia_id], sampling=sdss_sampling, truncation=True)[0]['flux'][0]
+
+        weights, fit_rms, locs, widths = sum_of_norms(sdss_sampling, sdss_flux, NUM_NORMS,
+                                                     spacing='linear',
+                                                     full_output=True)
+        
+        # convolve sdss with sigma_gaia
+        k = 0.474  # obtained experimentally
+        sigma_conv = np.sqrt(widths**2 + k**2 * deltaXP(sdss_sampling[:, None])**2)  # convolve gaussian sigmas with sigma_gaia
+        sdss_flux_fit = (weights * norm(sdss_sampling[:, None], locs, widths)).sum(1)
+        sdss_conv = (weights * norm(sdss_sampling[:, None], locs, sigma_conv)).sum(1)
     
     # mask everything to the area of interest
-    mask = (sdss_sampling > 390) & (sdss_sampling < 900)
+    mask = (sdss_sampling > 400) & (sdss_sampling < 900)
 
     sampling = sdss_sampling[mask]
     sdss_flux = sdss_flux[mask]
@@ -165,8 +180,11 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_ME
     ax[0].plot(sampling, sdss_flux_fit, color=SDSS_FIT_COLOR, ls='-',  lw=2, label='SDSS Gaussian fit')
     ax[0].plot(sampling, gaia_flux,     color=GAIA_COLOR,     ls='-',  lw=2, label='Gaia raw data')
 
+    max_y1 = max(np.quantile(sdss_flux_fit, .95), np.quantile(gaia_flux, .95))*1.1
+
     ax[0].legend(loc=0)
     ax[0].set_xlim(MIN_WVL, MAX_WVL)
+    ax[0].set_ylim(0, max_y1)
     ax[0].set_xticks(xticks)
     ax[0].set_ylabel('flux [W m$^{-2}$ nm$^{-1}$]')
 
@@ -175,8 +193,11 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_ME
     ax[1].plot(sampling, sdss_conv, color=SDSS_FIT_COLOR, ls='-',  lw=2, label='SDSS convolved')
     ax[1].plot(sampling, gaia_corr, color=GAIA_COLOR,     ls='-',  lw=2, label='Gaia corrected')
 
+    max_y2 = max(np.quantile(sdss_conv, .95), np.quantile(gaia_corr, .95))*1.1
+
     ax[1].legend(loc=0)
     ax[1].set_xlim(MIN_WVL, MAX_WVL)
+    ax[1].set_ylim(0, max_y2)
     ax[1].set_xticks(xticks)
     ax[1].set_ylabel('flux [W m$^{-2}$ nm$^{-1}$]')
 
@@ -184,10 +205,16 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_ME
     ax[2].axhline(1, color='#888888', ls='--', lw=2)
     ax[2].plot(sampling, w_norm, color='#000000', ls='-',  lw=2)
 
+    min_w = np.quantile(w_norm, .5)  - w_rrms * 2
+    max_w = np.quantile(w_norm, .95) + w_rrms * 2
+
     ax[2].set_xlim(MIN_WVL, MAX_WVL)
+    ax[2].set_ylim(min_w, max_w)
     ax[2].set_xticks(xticks)
     ax[2].set_ylabel('$w$ / median($w$)')
 
+    ax[2].text(0.87, 0.95, f"G = {gaia_g:.5}", ha='right', va='top', transform=plt.gca().transAxes)
+    ax[2].text(0.87, 0.85, f"r = {sdss_r:.5}", ha='right', va='top', transform=plt.gca().transAxes)
     ax[2].text(0.97, 0.95, f"median(w) = {np.median(w):.3}", ha='right', va='top', transform=plt.gca().transAxes)
     ax[2].text(0.97, 0.85, f"rrms(w) = {w_rrms:.3}", ha='right', va='top', transform=plt.gca().transAxes)
 
@@ -195,9 +222,9 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=False, mt=DF, q_med=Q_ME
     ax[0].set_title(f"Gaia source_id {gaia_id}\n SDSS specObjId {sdss_id}")
     
     if savefig:
-        plt.savefig(os.path.join(FIGURE_PATH, f'spectra_w_G{gaia_id}_S{sdss_id}.png'))
-
-    plt.show()
+        plt.savefig(os.path.join(savefig, f'spectra_r{sdss_r:.5}_G{gaia_id}_S{sdss_id}.png'))
+    else:
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -206,4 +233,4 @@ if __name__ == '__main__':
     except:
         print("No ID provided")
 
-    plot_spectra(gaia_id=gid, savefig=True)
+    plot_spectra(gaia_id=gid)
