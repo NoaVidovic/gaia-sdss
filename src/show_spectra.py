@@ -223,6 +223,7 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=FIGURE_PATH, mt=DF, q_me
     
     if savefig:
         plt.savefig(os.path.join(savefig, f'spectra_r{sdss_r:.5}_G{gaia_id}_S{sdss_id}.png'))
+        plt.close()
     else:
         plt.show()
 

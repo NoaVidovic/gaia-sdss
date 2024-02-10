@@ -80,7 +80,7 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         gaia_flux = data['gaia_flux']
         q = data['q']
 
-        mask = (sdss_sampling > 390) & (sdss_sampling < 900)
+        mask = (sdss_sampling > 400) & (sdss_sampling < 900)
         
         sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
         gaia_flux_integrated = np.trapz(gaia_flux[mask], sdss_sampling[mask])
@@ -120,7 +120,7 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
             pass
 
     # mask is the part of the spectrum where SDSS data is good
-    mask = (sdss_sampling > 390) & (sdss_sampling < 900)
+    mask = (sdss_sampling > 400) & (sdss_sampling < 900)
 
     # integrate flux
     sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
