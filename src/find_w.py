@@ -33,7 +33,7 @@ DEFAULT_RETURN = (pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA)
 GAIA_ID_COLNAME = 'source_id'
 SDSS_ID_COLNAME = 'specObjId'
 
-MIN_WVL = 390  # nm
+MIN_WVL = 400  # nm
 MAX_WVL = 900  # nm
 
 
@@ -71,6 +71,10 @@ def get_w(*, gaia_id=None, sdss_id=None, k=0.5):
 
     sampling = data['sampling']
     mask = (sampling > MIN_WVL) & (sampling < MAX_WVL)
+
+    #print(sampling)
+    #print(sampling[mask])
+    #print(len(sampling), len(sampling[mask]), len(data['q']))
 
     sampling = sampling[mask]
     q = data['q']

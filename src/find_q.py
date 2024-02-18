@@ -78,9 +78,10 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         sdss_flux_fit = data['sdss_flux_fit']
         sdss_conv = data['sdss_conv']
         gaia_flux = data['gaia_flux']
-        q = data['q']
+        #q = data['q']
 
         mask = (sdss_sampling > 400) & (sdss_sampling < 900)
+        q = sdss_conv[mask]/gaia_flux[mask]
         
         sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
         gaia_flux_integrated = np.trapz(gaia_flux[mask], sdss_sampling[mask])
@@ -88,6 +89,8 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         q_25 = np.quantile(q, 0.25)
         q_75 = np.quantile(q, 0.75)
         q_rrms = 0.7413 * (q_75 - q_25)
+
+        np.save(q_path, np.array([sdss_sampling[mask], sdss_flux[mask], sdss_flux_fit[mask], sdss_conv[mask], gaia_flux[mask], q]))
 
         return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.std(q), np.median(q), q_rrms)
 
@@ -135,7 +138,7 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
         os.makedirs(SPECTRA_PATH)
 
     # save all our spectrum data for reuse if the program crashes (my laptop sucks)
-    np.save(q_path, np.array([sdss_sampling, sdss_flux, sdss_flux_fit, sdss_conv, gaia_flux, q]))
+    np.save(q_path, np.array([sdss_sampling[mask], sdss_flux[mask], sdss_flux_fit[mask], sdss_conv[mask], gaia_flux[mask], q]))
 
     return (sdss_flux_integrated, gaia_flux_integrated, np.mean(q), np.std(q), np.median(q), q_rrms)
 
