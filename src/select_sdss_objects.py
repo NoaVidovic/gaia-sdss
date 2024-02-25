@@ -12,7 +12,7 @@ SELECT objId, specObjId, z, zErr, ra AS specRa, dec AS specDec, photoRa, photoDe
        psfMag_u, psfMag_g, psfMag_r, psfMag_i, psfMag_z,
        psfMagErr_u, psfMagErr_g, psfMagErr_r, psfMagErr_i, psfMagErr_z
 FROM SpecPhoto
-WHERE psfMag_r < 20
+WHERE psfMag_r < 18
 AND (ra < 60 OR ra > 300) AND dec > -1.67 AND dec < 1.67
 """
 
