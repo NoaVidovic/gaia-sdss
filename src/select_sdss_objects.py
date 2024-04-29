@@ -13,8 +13,8 @@ SELECT objId, specObjId, z, zErr, ra AS specRa, dec AS specDec, photoRa, photoDe
        psfMagErr_u, psfMagErr_g, psfMagErr_r, psfMagErr_i, psfMagErr_z
 FROM SpecPhoto
 WHERE psfMag_r < 18
-AND (ra < 60 OR ra > 300) AND dec > -1.67 AND dec < 1.67
 """
+#AND (ra < 60 OR ra > 300) AND dec > -1.67 AND dec < 1.67
 
 data_path = os.path.join(get_script_path(), '..', 'data')
 

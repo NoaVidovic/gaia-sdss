@@ -6,7 +6,7 @@ import sdss
 import warnings
 
 from astroML.sum_of_norms import sum_of_norms, norm
-from astroquery.sdss import SDSS as aq_sdss
+from astropy.io import fits
 from tqdm import tqdm
 
 from util import get_script_path, decode_npy
@@ -15,6 +15,7 @@ from util import get_script_path, decode_npy
 # constants
 DATA_PATH = os.path.join(get_script_path(), '..', 'data')
 SPECTRA_PATH = os.path.join(DATA_PATH, 'spectra')
+SDSS_SPECTRA_PATH = os.path.join(DATA_PATH, 'sdss_spectra')
 
 DF = pd.read_csv(os.path.join(DATA_PATH, 'main_table.csv'))
 df_copy = DF.copy()
@@ -99,8 +100,10 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     # SDSS spectrum
     try:
         sp = sdss.SpecObj(sdss_id)
-        data = aq_sdss.get_spectra(plate=sp.plate, mjd=sp.mjd, fiberID=sp.fiberID, data_release=17)[0][1].data
+        sp_path = os.path.join(SDSS_SPECTRA_PATH, f'{sp.plate:04}/spec-{sp.plate:04}-{sp.mjd:05}-{sp.fiberID:04}.fits')
+        data = fits.open(sp_path)[1].data
     except Exception as e:
+        print(e)
         return DEFAULT_RETURN
 
     sdss_sampling = 10 ** data['loglam'] / 10

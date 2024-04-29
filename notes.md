@@ -27,3 +27,11 @@ WHERE psfMag_r < 20
 AND ra > 60 AND ra < 300 AND dec > -1.67 AND dec < 1.67
 ```
 - the last line is a ra/dec filter for Stripe 82
+
+
+## SDSS spectra (full sky) - G < 17
+- 146745 total (speclist)
+- legacy: 100380
+- stellar cluster plates: 3369
+- SEGUE-2: 0
+- eBOSS: 15703
