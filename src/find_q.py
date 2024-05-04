@@ -132,10 +132,14 @@ def get_q(*, gaia_id=None, sdss_id=None, k=0.5):
     sdss_flux_integrated = np.trapz(sdss_flux[mask], sdss_sampling[mask])
     gaia_flux_integrated = np.trapz(gaia_flux[mask], sdss_sampling[mask])
 
-    q = sdss_conv[mask]/gaia_flux[mask]
-    q_25 = np.quantile(q, 0.25)
-    q_75 = np.quantile(q, 0.75)
-    q_rrms = 0.7413 * (q_75 - q_25)
+    try:
+        q = sdss_conv[mask]/gaia_flux[mask]
+        q_25 = np.quantile(q, 0.25)
+        q_75 = np.quantile(q, 0.75)
+        q_rrms = 0.7413 * (q_75 - q_25)
+    except Exception as e:
+        print(gaia_id, sdss_id, e)
+        return DEFAULT_RETURN
 
     if not os.path.exists(SPECTRA_PATH):
         os.makedirs(SPECTRA_PATH)

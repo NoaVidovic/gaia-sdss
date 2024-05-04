@@ -35,3 +35,11 @@ AND ra > 60 AND ra < 300 AND dec > -1.67 AND dec < 1.67
 - stellar cluster plates: 3369
 - SEGUE-2: 0
 - eBOSS: 15703
+
+
+522264079092969216 8055938464368318464 cannot do a non-empty take from an empty axes.
+
+
+# TODO
+
+- add histograms on x and y axis in mean-std diagram
