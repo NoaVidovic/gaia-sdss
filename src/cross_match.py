@@ -67,7 +67,7 @@ def xmatch(main_df, ext_filename):
 
 
 data_path = os.path.join(get_script_path(), '..', 'data')
-main_table = pd.read_csv(os.path.join(data_path, 'main_table.csv'))
+main_table = pd.read_csv(os.path.join(data_path, 'main_table_S82.csv'))
 
 print('Cross-matching with non-variable star dataset...')
 t0 = time()
@@ -85,5 +85,5 @@ main_table = xmatch(main_table, 'quasar.fits')
 print(f'Done in {time()-t0:.3f} seconds.')
 
 print('Saving to file...')
-main_table.to_csv(os.path.join(data_path, 'main_table.csv'), index=False)
+main_table.to_csv(os.path.join(data_path, 'main_table_S82.csv'), index=False)
 print('Done.')

@@ -17,7 +17,8 @@ DATA_PATH = os.path.join(get_script_path(), '..', 'data')
 SPECTRA_PATH = os.path.join(DATA_PATH, 'spectra')
 W_PATH = os.path.join(DATA_PATH, 'w')
 
-DF = pd.read_csv(os.path.join(DATA_PATH, 'main_table.csv'))
+#DF = pd.read_csv(os.path.join(DATA_PATH, 'main_table.csv'))
+DF = pd.read_csv(os.path.join(DATA_PATH, 'main_table_S82.csv'))
 df_copy = DF.copy()
 df_copy['w_mean'] = 0
 df_copy['w_std'] = 0
@@ -119,5 +120,6 @@ if __name__ == '__main__':
         df_copy.loc[df_copy[GAIA_ID_COLNAME] == gaia_id, 'D_rrms'] = D_rrms
 
     print('Data processed. Saving to main_table.csv...')
-    df_copy.to_csv(os.path.join(DATA_PATH, 'main_table.csv'), index=False)
+    #df_copy.to_csv(os.path.join(DATA_PATH, 'main_table.csv'), index=False)
+    df_copy.to_csv(os.path.join(DATA_PATH, 'main_table_S82.csv'), index=False)
     print('Done.')

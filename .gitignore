@@ -12,5 +12,6 @@ venv/*
 # Dataset and figures
 data/*
 !data/main_table.csv
+!data/main_table_S82.csv
 !data/q_median.npy
-figures/*
+figures/roi/*
