@@ -1,4 +1,5 @@
 import gaiaxpy as gxp
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -173,6 +174,7 @@ def plot_spectra(*, gaia_id=None, sdss_id=None, savefig=FIGURE_PATH, mt=DF, q_me
     xticks = np.arange(MAX_WVL, MIN_WVL, -20)[::-1]
     
     # plot the results
+    mpl.use('agg')
     fig, ax = plt.subplots(nrows=3, figsize=(30, 30))
 
     # raw data

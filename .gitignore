@@ -15,3 +15,5 @@ data/*
 !data/main_table_S82.csv
 !data/q_median.npy
 figures/roi/*
+figures/roi.tar.gz
+figures/roi_old/*
